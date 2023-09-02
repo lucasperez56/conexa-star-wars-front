@@ -5,6 +5,8 @@ import { CharacterDTO } from '@/types/character';
 import { GetServerSideProps, } from 'next/types';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import CharacterItem from '../../components/CharacterItem';
+import { getFavorites } from '../../utils/favoriteCharacters';
 
 interface CharactersPageProps {
     characters: CharacterDTO[];
@@ -16,10 +18,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
     let url = `${process.env.BACKEND_URL}/characters`;
     if (search) {
-      url += `?search=${search}`;
+        url += `?search=${search}`;
     } else if (page) {
-      url += `?page=${page}`;
-    }   
+        url += `?page=${page}`;
+    }
 
     const res = await axios.get<CharacterDTO[]>(url);
     const characters = res.data;
@@ -35,6 +37,11 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ characters }) => {
     const router = useRouter();
     const [page, setPage] = useState<number>(Number(router.query.page) || 1);
     const [searchTerm, setSearchTerm] = useState<string>("");
+    const [showOnlyFavorites, setShowOnlyFavorites] = useState<boolean>(false);
+
+    const filteredCharacters = showOnlyFavorites
+        ? characters.filter(char => getFavorites().includes(char.id))
+        : characters;
 
     const handleSearch = () => {
         router.push(`/characters?search=${searchTerm}`);
@@ -58,7 +65,13 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ characters }) => {
         <div className="bg-gray-900 text-white min-h-screen p-6">
             <NavBar />
             <h1 className="text-4xl mb-6 px-4">Characters</h1>
-            <div className="mb-4">
+            <button
+                className="mb-4 p-2 bg-gray-700 hover:bg-gray-600 rounded"
+                onClick={() => setShowOnlyFavorites(prev => !prev)}
+            >
+                {showOnlyFavorites ? 'Show All' : 'Show Favorites'}
+            </button>
+            <div className="mb-6">
                 <input
                     type="text"
                     placeholder="Search by name..."
@@ -71,12 +84,8 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ characters }) => {
                 </button>
             </div>
             <ul className="space-y-4">
-                {characters.map((character) => (
-                    <li key={character.id} className="border-b border-gray-700 py-2">
-                        <Link href={`/characters/${character.id}`} className="text-xl hover:text-gray-400">
-                            <span className="ml-4 text-sm text-gray-500">{character.name}</span>
-                        </Link>
-                    </li>
+                {filteredCharacters.map(character => (
+                    <CharacterItem key={character.id} character={character} />
                 ))}
             </ul>
             <div className="mt-4 flex justify-center">
