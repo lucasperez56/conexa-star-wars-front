@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { addFavorite, removeFavorite, isFavorite } from '../utils/favoriteCharacters';
 import { CharacterDTO } from '../types/character';
 
@@ -7,7 +7,11 @@ interface CharacterItemProps {
 }
 
 const CharacterItem: React.FC<CharacterItemProps> = ({ character }) => {
-  const [favorite, setFavorite] = useState<boolean>(isFavorite(character.id));
+  const [favorite, setFavorite] = useState<boolean>(false);
+
+  useEffect(() =>  {
+    character && setFavorite(isFavorite(character.id))
+  }, [character])
 
   const toggleFavorite = (): void => {
     if (favorite) {

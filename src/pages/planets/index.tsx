@@ -1,80 +1,63 @@
 import axios from 'axios';
 import Link from 'next/link';
 import NavBar from '../../components/NavBar';
-import { CharacterDTO } from '@/types/character';
 import { GetServerSideProps, } from 'next/types';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import CharacterItem from '../../components/CharacterItem';
-import { getFavorites } from '../../utils/favoriteCharacters';
+import { PlanetDTO } from '@/types/planet';
 
-interface CharactersPageProps {
-    characters: CharacterDTO[];
+interface PlanetsPageProps {
+    planets: PlanetDTO[];
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
     const page = context.query.page ? Number(context.query.page) : 1;
     const search = context.query.search ? context.query.search : undefined;
 
-    let url = `${process.env.BACKEND_URL}/characters`;
+    let url = `${process.env.BACKEND_URL}/planets`;
     if (search) {
         url += `?search=${search}`;
     } else if (page) {
         url += `?page=${page}`;
     }
 
-    const res = await axios.get<CharacterDTO[]>(url);
-    const characters = res.data;
+    const res = await axios.get<PlanetDTO[]>(url);
+    const planets = res.data;
 
     return {
         props: {
-            characters
+            planets
         }
     };
 };
 
-const CharactersPage: React.FC<CharactersPageProps> = ({ characters }) => {
+const PlanetsPage: React.FC<PlanetsPageProps> = ({ planets }) => {
     const router = useRouter();
     const [page, setPage] = useState<number>(Number(router.query.page) || 1);
     const [searchTerm, setSearchTerm] = useState<string>("");
-    const [showOnlyFavorites, setShowOnlyFavorites] = useState<boolean>(false);
-
-    let filteredCharacters = characters
-
-    if (typeof window !== 'undefined') {
-        filteredCharacters = showOnlyFavorites
-        ? characters.filter(char => getFavorites().includes(char.id))
-        : characters;
-    }
 
     const handleSearch = () => {
-        router.push(`/characters?search=${searchTerm}`);
+        router.push(`/planets?search=${searchTerm}`);
     }
 
     const handlePrevious = () => {
         if (page > 1) {
             const newPage = page - 1;
             setPage(newPage);
-            router.push(`/characters?page=${newPage}`);
+            router.push(`/planets?page=${newPage}`);
         }
     };
 
     const handleNext = () => {
         const newPage = page + 1;
         setPage(newPage);
-        router.push(`/characters?page=${newPage}`);
+        router.push(`/planets?page=${newPage}`);
     };
 
     return (
         <div className="bg-gray-900 text-white min-h-screen p-6">
             <NavBar />
-            <h1 className="text-4xl mb-6 px-4">Characters</h1>
-            <button
-                className="mb-4 p-2 bg-gray-700 hover:bg-gray-600 rounded"
-                onClick={() => setShowOnlyFavorites(prev => !prev)}
-            >
-                {showOnlyFavorites ? 'Show All' : 'Show Favorites'}
-            </button>
+            <h1 className="text-4xl mb-6 px-4">Planets</h1>
             <div className="mb-6">
                 <input
                     type="text"
@@ -88,8 +71,12 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ characters }) => {
                 </button>
             </div>
             <ul className="space-y-4">
-                {filteredCharacters.map(character => (
-                    <CharacterItem key={character.id} character={character} />
+                {planets.map(planet => (
+                    <li key={planet.id} className="border-b border-gray-700 py-2">
+                    <Link href={`/planets/${planet.id}`} className="text-xl hover:text-gray-400">
+                        <span className="ml-4 text-sm text-gray-500">{planet.name}</span>
+                    </Link>
+                </li>
                 ))}
             </ul>
             <div className="mt-4 flex justify-center">
@@ -111,4 +98,4 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ characters }) => {
     );
 };
 
-export default CharactersPage;
+export default PlanetsPage;
