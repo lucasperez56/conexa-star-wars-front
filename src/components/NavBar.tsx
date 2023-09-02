@@ -18,7 +18,7 @@ const NavBar = () => {
             <div className={`mt-3 ${isOpen ? 'block' : 'hidden'} md:block`}>
                 <nav className="space-x-4">
                     <Link href="/characters" className="hover:text-gray-400">Characters 👨‍👩‍👧‍👧</Link>
-                    <Link href="/movies" className="hover:text-gray-400">Movies 📹</Link>
+                    <Link href="/films" className="hover:text-gray-400">Movies 📹</Link>
                     <Link href="/ships" className="hover:text-gray-400">Ships 🚀</Link>
                     <Link href="/planets" className="hover:text-gray-400">Planets 🪐</Link>
                 </nav>

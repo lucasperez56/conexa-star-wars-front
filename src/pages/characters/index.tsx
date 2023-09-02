@@ -4,7 +4,6 @@ import NavBar from '../../components/NavBar';
 import { CharacterDTO } from '@/types/character';
 import { GetServerSideProps, } from 'next/types';
 import { useState } from 'react';
-import CharacterCard from '@/components/CharacterCard';
 import { useRouter } from 'next/router';
 
 interface CharactersPageProps {
@@ -13,8 +12,16 @@ interface CharactersPageProps {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
     const page = context.query.page ? Number(context.query.page) : 1;
+    const search = context.query.search ? context.query.search : undefined;
 
-    const res = await axios.get<CharacterDTO[]>(`http://localhost:8080/characters?page=${page}`);
+    let url = `${process.env.BACKEND_URL}/characters`;
+    if (search) {
+      url += `?search=${search}`;
+    } else if (page) {
+      url += `?page=${page}`;
+    }   
+
+    const res = await axios.get<CharacterDTO[]>(url);
     const characters = res.data;
 
     return {
@@ -27,6 +34,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 const CharactersPage: React.FC<CharactersPageProps> = ({ characters }) => {
     const router = useRouter();
     const [page, setPage] = useState<number>(Number(router.query.page) || 1);
+    const [searchTerm, setSearchTerm] = useState<string>("");
+
+    const handleSearch = () => {
+        router.push(`/characters?search=${searchTerm}`);
+    }
 
     const handlePrevious = () => {
         if (page > 1) {
@@ -46,11 +58,23 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ characters }) => {
         <div className="bg-gray-900 text-white min-h-screen p-6">
             <NavBar />
             <h1 className="text-4xl mb-6 px-4">Characters</h1>
+            <div className="mb-4">
+                <input
+                    type="text"
+                    placeholder="Search by name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="p-2 bg-gray-800 rounded"
+                />
+                <button onClick={handleSearch} className="p-2 bg-gray-700 hover:bg-gray-600 rounded ml-2">
+                    Search
+                </button>
+            </div>
             <ul className="space-y-4">
                 {characters.map((character) => (
                     <li key={character.id} className="border-b border-gray-700 py-2">
                         <Link href={`/characters/${character.id}`} className="text-xl hover:text-gray-400">
-                        <span className="ml-4 text-sm text-gray-500">{character.name}</span>
+                            <span className="ml-4 text-sm text-gray-500">{character.name}</span>
                         </Link>
                     </li>
                 ))}
