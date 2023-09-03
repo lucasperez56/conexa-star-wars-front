@@ -1,54 +1,37 @@
 import axios from 'axios';
-import Link from 'next/link';
-import NavBar from '../../components/NavBar';
 import { CharacterDTO } from '@/types/character';
-import { GetServerSideProps, } from 'next/types';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import CharacterItem from '../../components/CharacterItem';
+import CharacterItem from '../../components/FavoriteItem';
 import { getFavorites } from '../../utils/favoriteCharacters';
+import useSWR from 'swr';
+import SearchComponent from '@/components/SearchComponent';
+import IndexSkeleton from '@/components/IndexSkeleton';
+import FavoriteItem from '../../components/FavoriteItem';
 
-interface CharactersPageProps {
-    characters: CharacterDTO[];
-}
+const fetcher = (url: string) => axios.get<CharacterDTO[]>(url).then(res => res.data);
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-    const page = context.query.page ? Number(context.query.page) : 1;
-    const search = context.query.search ? context.query.search : undefined;
 
-    let url = `${process.env.BACKEND_URL}/characters`;
-    if (search) {
-        url += `?search=${search}`;
-    } else if (page) {
-        url += `?page=${page}`;
-    }
-
-    const res = await axios.get<CharacterDTO[]>(url);
-    const characters = res.data;
-
-    return {
-        props: {
-            characters
-        }
-    };
-};
-
-const CharactersPage: React.FC<CharactersPageProps> = ({ characters }) => {
+const CharactersPage: React.FC = () => {
     const router = useRouter();
     const [page, setPage] = useState<number>(Number(router.query.page) || 1);
     const [searchTerm, setSearchTerm] = useState<string>("");
     const [showOnlyFavorites, setShowOnlyFavorites] = useState<boolean>(false);
 
-    let filteredCharacters = characters
+    const url = searchTerm
+        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/characters?search=${searchTerm}`
+        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/characters?page=${page}`;
 
-    if (typeof window !== 'undefined') {
-        filteredCharacters = showOnlyFavorites
-        ? characters.filter(char => getFavorites().includes(char.id))
+    const { data: characters, error } = useSWR<CharacterDTO[]>(url, fetcher);
+
+    // TODO: Los favoritos se marcan sin prestar atención al paginado, y quedan como favoritos a la pagina
+    const filteredCharacters = showOnlyFavorites
+        ? characters?.filter(char => getFavorites().includes(char.id))
         : characters;
-    }
 
-    const handleSearch = () => {
-        router.push(`/characters?search=${searchTerm}`);
+    const handleSearch = (term: string) => {
+        setSearchTerm(term)
+        router.push(`/characters?search=${term}`);
     }
 
     const handlePrevious = () => {
@@ -65,9 +48,30 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ characters }) => {
         router.push(`/characters?page=${newPage}`);
     };
 
+    if (!characters) {
+        return (
+            <div>
+                <h1 className="text-4xl mb-6 px-4">Characters</h1>
+                <button
+                    className="mb-4 p-2 bg-gray-700 hover:bg-gray-600 rounded"
+                    onClick={() => setShowOnlyFavorites(prev => !prev)}
+                >
+                    {showOnlyFavorites ? 'Show All' : 'Show Favorites'}
+                </button>
+                <div className="mb-6">
+                    <SearchComponent onSearch={handleSearch} />
+                    <ul className="space-y-4 mt-4">
+                        {Array.from({ length: 10 }).map((_, index) => (
+                            <IndexSkeleton key={index} />
+                        ))}
+                    </ul>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="bg-gray-900 text-white min-h-screen p-6">
-            <NavBar />
+        <div>
             <h1 className="text-4xl mb-6 px-4">Characters</h1>
             <button
                 className="mb-4 p-2 bg-gray-700 hover:bg-gray-600 rounded"
@@ -76,20 +80,11 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ characters }) => {
                 {showOnlyFavorites ? 'Show All' : 'Show Favorites'}
             </button>
             <div className="mb-6">
-                <input
-                    type="text"
-                    placeholder="Search by name..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="p-2 bg-gray-800 rounded"
-                />
-                <button onClick={handleSearch} className="p-2 bg-gray-700 hover:bg-gray-600 rounded ml-2">
-                    Search
-                </button>
+                <SearchComponent onSearch={handleSearch} />
             </div>
             <ul className="space-y-4">
-                {filteredCharacters.map(character => (
-                    <CharacterItem key={character.id} character={character} />
+                {filteredCharacters && filteredCharacters.map(character => (
+                    <FavoriteItem key={character.id} character={character} />
                 ))}
             </ul>
             <div className="mt-4 flex justify-center">

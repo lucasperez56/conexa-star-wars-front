@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { addFavorite, removeFavorite, isFavorite } from '../utils/favoriteCharacters';
 import { CharacterDTO } from '../types/character';
+import Link from 'next/link';
 
 interface CharacterItemProps {
   character: CharacterDTO;
 }
 
-const CharacterItem: React.FC<CharacterItemProps> = ({ character }) => {
+const FavoriteItem: React.FC<CharacterItemProps> = ({ character }) => {
   const [favorite, setFavorite] = useState<boolean>(false);
 
-  useEffect(() =>  {
+  useEffect(() => {
     character && setFavorite(isFavorite(character.id))
   }, [character])
 
@@ -25,7 +26,9 @@ const CharacterItem: React.FC<CharacterItemProps> = ({ character }) => {
 
   return (
     <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg mb-2">
-      <div>{character.name}</div>
+      <Link href={`/characters/${character.id}`} className="hover:text-gray-400">
+        <div>{character.name}</div>
+      </Link>
       <button onClick={toggleFavorite} className={favorite ? 'text-yellow-400' : 'text-white'}>
         {favorite ? '★' : '☆'}
       </button>
@@ -33,4 +36,4 @@ const CharacterItem: React.FC<CharacterItemProps> = ({ character }) => {
   );
 }
 
-export default CharacterItem;
+export default FavoriteItem;

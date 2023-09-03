@@ -16,9 +16,15 @@ const NavBar = () => {
 
             {/* Menu */}
             <div className={`mt-3 ${isOpen ? 'block' : 'hidden'} md:block`}>
-                <nav className="space-x-4">
+                <nav className="grid grid-cols-1 md:hidden gap-6 mt-4">
                     <Link href="/characters" className="hover:text-gray-400">Characters 👨‍👩‍👧‍👧</Link>
-                    <Link href="/films" className="hover:text-gray-400">Movies 📹</Link>
+                    <Link href="/films" className="hover:text-gray-400">Films 📹</Link>
+                    <Link href="/starships" className="hover:text-gray-400">Starships 🚀</Link>
+                    <Link href="/planets" className="hover:text-gray-400">Planets 🪐</Link>
+                </nav>
+                <nav className="hidden md:space-x-4 md:block">
+                    <Link href="/characters" className="hover:text-gray-400">Characters 👨‍👩‍👧‍👧</Link>
+                    <Link href="/films" className="hover:text-gray-400">Films 📹</Link>
                     <Link href="/starships" className="hover:text-gray-400">Starships 🚀</Link>
                     <Link href="/planets" className="hover:text-gray-400">Planets 🪐</Link>
                 </nav>

@@ -1,43 +1,28 @@
 import axios from 'axios';
-import Link from 'next/link';
-import NavBar from '../../components/NavBar';
-import { GetServerSideProps, } from 'next/types';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { PlanetDTO } from '@/types/planet';
+import SearchComponent from '@/components/SearchComponent';
+import useSWR from 'swr';
+import IndexSkeleton from '@/components/IndexSkeleton';
+import IndexItem from '@/components/IndexItem';
 
-interface PlanetsPageProps {
-    planets: PlanetDTO[];
-}
+const fetcher = (url: string) => axios.get<PlanetDTO[]>(url).then(res => res.data);
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-    const page = context.query.page ? Number(context.query.page) : 1;
-    const search = context.query.search ? context.query.search : undefined;
-
-    let url = `${process.env.BACKEND_URL}/planets`;
-    if (search) {
-        url += `?search=${search}`;
-    } else if (page) {
-        url += `?page=${page}`;
-    }
-
-    const res = await axios.get<PlanetDTO[]>(url);
-    const planets = res.data;
-
-    return {
-        props: {
-            planets
-        }
-    };
-};
-
-const PlanetsPage: React.FC<PlanetsPageProps> = ({ planets }) => {
+const PlanetsPage: React.FC = () => {
     const router = useRouter();
     const [page, setPage] = useState<number>(Number(router.query.page) || 1);
     const [searchTerm, setSearchTerm] = useState<string>("");
 
-    const handleSearch = () => {
-        router.push(`/planets?search=${searchTerm}`);
+    const url = searchTerm
+        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/planets?search=${searchTerm}`
+        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/planets?page=${page}`;
+
+    const { data: planets, isLoading } = useSWR<PlanetDTO[]>(url, fetcher);
+
+    const handleSearch = (term: string) => {
+        setSearchTerm(term)
+        router.push(`/planets?search=${term}`);
     }
 
     const handlePrevious = () => {
@@ -54,29 +39,31 @@ const PlanetsPage: React.FC<PlanetsPageProps> = ({ planets }) => {
         router.push(`/planets?page=${newPage}`);
     };
 
+    if (isLoading) {
+        return (
+            <div>
+                <h1 className="text-4xl mb-6 px-4">Planets</h1>
+                <div className="mb-6">
+                    <SearchComponent onSearch={handleSearch} />
+                    <ul className="space-y-4 mt-4">
+                        {Array.from({ length: 10 }).map((_, index) => (
+                            <IndexSkeleton key={index} />
+                        ))}
+                    </ul>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="bg-gray-900 text-white min-h-screen p-6">
-            <NavBar />
+        <div>
             <h1 className="text-4xl mb-6 px-4">Planets</h1>
             <div className="mb-6">
-                <input
-                    type="text"
-                    placeholder="Search by name..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="p-2 bg-gray-800 rounded"
-                />
-                <button onClick={handleSearch} className="p-2 bg-gray-700 hover:bg-gray-600 rounded ml-2">
-                    Search
-                </button>
+                <SearchComponent onSearch={handleSearch} />
             </div>
             <ul className="space-y-4">
-                {planets.map(planet => (
-                    <li key={planet.id} className="border-b border-gray-700 py-2">
-                    <Link href={`/planets/${planet.id}`} className="text-xl hover:text-gray-400">
-                        <span className="ml-4 text-sm text-gray-500">{planet.name}</span>
-                    </Link>
-                </li>
+                {planets && planets.map(planet => (
+                    <IndexItem key={planet.id} entity={planet} link='planets' />
                 ))}
             </ul>
             <div className="mt-4 flex justify-center">

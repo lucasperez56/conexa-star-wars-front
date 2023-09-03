@@ -3,28 +3,42 @@ import NavBar from '../../components/NavBar';
 import { CharacterDTO } from '../../types/character';
 import { GetServerSideProps } from 'next';
 import DetailItem from '@/components/DetailItem';
+import useSWR from 'swr';
+import { useRouter } from 'next/router';
+import DetailSkeleton from '@/components/DetailSkeleton';
 
 interface CharacterDetailProps {
   character: CharacterDTO;
 }
 
-  export const getServerSideProps: GetServerSideProps = async (context) => {
-    const id = context.params!.id as string;
+const fetcher = (url: string) => axios.get<CharacterDTO>(url).then(res => res.data);
 
-    const res = await axios.get<CharacterDTO>(`${process.env.BACKEND_URL}/characters/${id}`);
-    const character = res.data;
+const CharacterDetail: React.FC<CharacterDetailProps> = () => {
+  const router = useRouter();
+  const { id } = router.query;
+  const { data: character, error } = useSWR<CharacterDTO>(id ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/characters/${id}` : null, fetcher);
 
-    return {
-        props: {
-            character
-        }
-    };
-};
+  if (error) return <div className="text-white">Failed to load character</div>;
+  if (!character) return (
+    <div>
+      <div className="mt-6 animate-fadeInFast">
+          <div className="text-3xl mb-4 border-b pb-2 border-gray-700"></div>
+  
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <DetailSkeleton />
+            <DetailSkeleton />
+            <DetailSkeleton />
+            <DetailSkeleton />
+            <DetailSkeleton />
+            <DetailSkeleton />
+            <DetailSkeleton />
+          </div>
+        </div>
+    </div>
+  )
 
-const CharacterDetail: React.FC<CharacterDetailProps> = ({ character }) => {
     return (
-      <div className="bg-gray-900 text-white min-h-screen p-6">
-        <NavBar />
+      <div>
         <div className="mt-6 animate-fadeInFast">
           <h2 className="text-3xl mb-4 border-b pb-2 border-gray-700">{character.name}</h2>
   

@@ -1,6 +1,6 @@
 export interface FilmDTO {
     id: number;
-    title: string;
+    name: string;
     episode_id: string;
     director: string;
     producer: string;
